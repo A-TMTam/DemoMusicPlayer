@@ -6,6 +6,7 @@ import android.animation.Animator;
 import android.animation.AnimatorSet;
 import android.animation.ObjectAnimator;
 import android.content.Intent;
+import android.graphics.PorterDuff;
 import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Bundle;
@@ -35,6 +36,7 @@ public class PlayerActivity extends AppCompatActivity {
     static MediaPlayer mediaPlayer;
     int position;
     ArrayList<File> mySongs;
+    Thread updateSeekBar;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -71,6 +73,46 @@ public class PlayerActivity extends AppCompatActivity {
 
         mediaPlayer = MediaPlayer.create(getApplicationContext(), uri);
         mediaPlayer.start();
+
+        updateSeekBar = new Thread() {
+            @Override
+            public void run() {
+                int totalDuration = mediaPlayer.getDuration();
+                int currentPosition = 0;
+                while (currentPosition < totalDuration) {
+                    try {
+                        sleep(500);
+                        currentPosition = mediaPlayer.getCurrentPosition();
+                        seekBar.setProgress(currentPosition);
+                    } catch (InterruptedException | IllegalStateException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        };
+        seekBar.setMax(mediaPlayer.getDuration());
+        updateSeekBar.start();
+        seekBar.getProgressDrawable().setColorFilter(getResources().getColor(R.color.colorPrimary),
+                PorterDuff.Mode.MULTIPLY);
+        seekBar.getThumb().setColorFilter(getResources().getColor(R.color.colorPrimary),
+                PorterDuff.Mode.SRC_IN);
+
+        seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int i, boolean b) {
+
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+
+            }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+                mediaPlayer.seekTo(seekBar.getProgress());
+            }
+        });
 
         btnPlay.setOnClickListener(new View.OnClickListener() {
             @Override
