@@ -7,9 +7,10 @@
     </solid>
 
     <stroke
-        android:color="#191b1e"
-        android:width="1dp">
+        android:width="1dp"
+        android:color="#FF8800">
 
     </stroke>
 
+    <corners android:radius="10dp"/>
 </shape>

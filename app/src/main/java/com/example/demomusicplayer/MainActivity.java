@@ -3,10 +3,12 @@ package com.example.demomusicplayer;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.Manifest;
+import android.content.Intent;
 import android.os.Bundle;
 import android.os.Environment;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.BaseAdapter;
 import android.widget.ListView;
@@ -37,7 +39,7 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
-    public  void runtimePermisson(){
+    public void runtimePermisson() {
         Dexter.withContext(this).withPermission(Manifest.permission.READ_EXTERNAL_STORAGE)
                 .withListener(new PermissionListener() {
                     @Override
@@ -57,17 +59,16 @@ public class MainActivity extends AppCompatActivity {
                 }).check();
     }
 
-    public ArrayList<File> findsong (File file){
+    public ArrayList<File> findsong(File file) {
         ArrayList<File> arrayList = new ArrayList<>();
 
         File[] files = file.listFiles();
 
-        for (File singlefile: files){
+        for (File singlefile : files) {
             if (singlefile.isDirectory() && !singlefile.isHidden()) {
                 arrayList.addAll(findsong(singlefile));
-            }
-            else {
-                if(singlefile.getName().endsWith(".mp3") || singlefile.getName().endsWith(".wav")){
+            } else {
+                if (singlefile.getName().endsWith(".mp3") || singlefile.getName().endsWith(".wav")) {
                     arrayList.add(singlefile);
                 }
             }
@@ -76,11 +77,11 @@ public class MainActivity extends AppCompatActivity {
         return arrayList;
     }
 
-    void displaySongs(){
+    void displaySongs() {
         final ArrayList<File> mySongs = findsong(Environment.getExternalStorageDirectory());
 
         items = new String[mySongs.size()];
-        for (int i = 0; i < mySongs.size(); i++){
+        for (int i = 0; i < mySongs.size(); i++) {
             items[i] = mySongs.get(i).getName().toString().replace(".mp3", "")
                     .replace(".wav", "");
         }
@@ -91,9 +92,20 @@ public class MainActivity extends AppCompatActivity {
 
         customAdapter customAdapter = new customAdapter();
         ListView.setAdapter(customAdapter);
+
+        ListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
+                String songName = (String) ListView.getItemAtPosition(i);
+                startActivity(new Intent(getApplicationContext(), PlayerActivity.class)
+                        .putExtra("songs", mySongs)
+                        .putExtra("songName", songName)
+                        .putExtra("pos", i));
+            }
+        });
     }
 
-    class customAdapter extends BaseAdapter{
+    class customAdapter extends BaseAdapter {
 
         @Override
         public int getCount() {
@@ -113,7 +125,7 @@ public class MainActivity extends AppCompatActivity {
         @Override
         public View getView(int i, View view, ViewGroup viewGroup) {
             View myView = getLayoutInflater().inflate(R.layout.list_item, null);
-            TextView textSong = myView.findViewById(R.id.txtSongName);
+            TextView textSong = myView.findViewById(R.id.txtListSongName);
             textSong.setSelected(true);
             textSong.setText(items[i]);
 
