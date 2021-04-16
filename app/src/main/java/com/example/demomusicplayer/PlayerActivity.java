@@ -1,5 +1,6 @@
 package com.example.demomusicplayer;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.animation.Animator;
@@ -11,6 +12,8 @@ import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.FileObserver;
+import android.os.Handler;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
@@ -39,9 +42,29 @@ public class PlayerActivity extends AppCompatActivity {
     Thread updateSeekBar;
 
     @Override
+    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
+        if (item.getItemId() == android.R.id.home){
+            onBackPressed();
+        }
+        return super.onOptionsItemSelected(item);
+    }
+
+    @Override
+    protected void onDestroy() {
+        if (blastVisualizer != null){
+            blastVisualizer.release();
+        }
+        super.onDestroy();
+    }
+
+    @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_player);
+
+        getSupportActionBar().setTitle("Now Playing");
+        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+        getSupportActionBar().setDisplayShowHomeEnabled(true);
 
         btnPlay = findViewById(R.id.btnPlay);
         btnNext = findViewById(R.id.btnNext);
@@ -114,6 +137,21 @@ public class PlayerActivity extends AppCompatActivity {
             }
         });
 
+        String endTime = createTime(mediaPlayer.getDuration());
+        txtSongStop.setText(endTime);
+
+        final Handler handler = new Handler();
+        final int delay = 1000;
+
+        handler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                String currentTime = createTime(mediaPlayer.getCurrentPosition());
+                txtSongStart.setText(currentTime);
+                handler.postDelayed(this, delay);
+            }
+        }, delay);
+
         btnPlay.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -126,7 +164,7 @@ public class PlayerActivity extends AppCompatActivity {
                 }
             }
         });
-        //Tu chay bai tiep theo
+        //Bai tiep theo
 
         mediaPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
             @Override
@@ -135,7 +173,11 @@ public class PlayerActivity extends AppCompatActivity {
             }
         });
 
-        //Nut tiep theo
+        int audioSessionId = mediaPlayer.getAudioSessionId();
+        if (audioSessionId != -1){
+            blastVisualizer.setAudioSessionId( audioSessionId);
+        }
+
         btnNext.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -153,6 +195,11 @@ public class PlayerActivity extends AppCompatActivity {
                 btnPlay.setBackgroundResource(R.drawable.ic_pause);
 
                 startAnimation(imgView);
+
+                int audioSessionId = mediaPlayer.getAudioSessionId();
+                if (audioSessionId != -1){
+                    blastVisualizer.setAudioSessionId( audioSessionId);
+                }
 
             }
         });
@@ -173,6 +220,27 @@ public class PlayerActivity extends AppCompatActivity {
                 btnPlay.setBackgroundResource(R.drawable.ic_pause);
 
                 startAnimation(imgView);
+
+                int audioSessionId = mediaPlayer.getAudioSessionId();
+                if (audioSessionId != -1){
+                    blastVisualizer.setAudioSessionId( audioSessionId);
+                }
+            }
+        });
+        btnFastForward.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                if (mediaPlayer.isPlaying()){
+                    mediaPlayer.seekTo(mediaPlayer.getCurrentPosition()+10000);
+                }
+            }
+        });
+        btnFastRewind.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                if (mediaPlayer.isPlaying()){
+                    mediaPlayer.seekTo(mediaPlayer.getCurrentPosition()-10000);
+                }
             }
         });
 
@@ -184,6 +252,21 @@ public class PlayerActivity extends AppCompatActivity {
         AnimatorSet animatorSet = new AnimatorSet();
         animatorSet.playTogether(animator);
         animatorSet.start();
+    }
+
+    public String createTime(int duration){
+        String time = "";
+        int min = duration/1000/60;
+        int sec = duration/1000%60;
+
+        time += min + ":";
+
+        if (sec < 10){
+            time += "0";
+        }
+        time += sec;
+
+        return time;
     }
 
 }
